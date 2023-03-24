@@ -89,7 +89,7 @@ def parallel_eval_objective_list(individual_list,
     
     with TqdmCallback(desc="Evaluating Individuals", disable=verbose<2, leave=False):
         offspring_scores = list(dask.compute( *delayed_values,
-                                num_workers=n_jobs, threads_per_worker=1))
+                                num_workers=n_jobs))
     
 
     if n_expected_columns is not None:
