@@ -448,10 +448,10 @@ class TPOTEstimator(BaseEstimator):
         leaf_config_dict = get_configuration_dictionary(self.leaf_config_dict, n_samples, n_features, self.classification, subsets=self.subsets, feature_names=self.feature_names)
 
         if self.n_initial_optimizations > 0:
-            tmp = partial(tpot2.estimator_objective_functions.cross_val_score_objective,scorers= self._scorers, cv=self.optimization_cv )
-            optuna_objective = lambda ind: tmp(
-                ind.export_pipeline(memory=self.memory, cross_val_predict_cv=self.cross_val_predict_cv, subset_column=self.subset_column), 
-                X, y, )
+            #tmp = partial(tpot2.estimator_objective_functions.cross_val_score_objective,scorers= self._scorers, cv=self.optimization_cv, memory=self.memory, cross_val_predict_cv=self.cross_val_predict_cv, subset_column=self.subset_column )
+            optuna_objective = lambda ind,  X=X, y=y , scorers= self._scorers, cv=self.optimization_cv, memory=self.memory, cross_val_predict_cv=self.cross_val_predict_cv, subset_column=self.subset_column: tpot2.estimator_objective_functions.cross_val_score_objective(
+                ind, 
+                X=X, y=y, scorers= scorers, cv=cv, memory=memory, cross_val_predict_cv=cross_val_predict_cv, subset_column=subset_column )
         else:
             optuna_objective = None
 
@@ -476,32 +476,21 @@ class TPOTEstimator(BaseEstimator):
             evalutation_early_stop_steps = None
 
 
-        def objective_function_generator(pipeline, x,y, scorers, cv, other_objective_functions, step=None, budget=None, generation=1,is_classification=True):
-            #subsample the data
-            if budget is not None and budget < 1:
-                if is_classification:
-                    x,y = sklearn.utils.resample(x,y, stratify=y, n_samples=int(budget*len(x)), replace=False, random_state=1)
-                else:
-                    x,y = sklearn.utils.resample(x,y, n_samples=int(budget*len(x)), replace=False, random_state=1)
 
-            cv_obj_scores = tpot2.estimator_objective_functions.cross_val_score_objective(sklearn.base.clone(pipeline),x,y,scorers=scorers, cv=cv , fold=step)
-            
-            other_scores = []
-            
-            if other_objective_functions is not None and len(other_objective_functions) >0:
-                other_scores = [obj(sklearn.base.clone(pipeline)) for obj in other_objective_functions]
-            
-            return np.concatenate([cv_obj_scores,other_scores])
 
+        #.export_pipeline(memory=self.memory, cross_val_predict_cv=self.cross_val_predict_cv, subset_column=self.subset_column),
         #tmp = partial(objective_function_generator, scorers= self._scorers, cv=self.cv_gen, other_objective_functions=self.other_objective_functions )
-        self.final_object_function_list = [lambda pipeline_individual, **kwargs: objective_function_generator(
-                pipeline_individual.export_pipeline(memory=self.memory, cross_val_predict_cv=self.cross_val_predict_cv, subset_column=self.subset_column),
-                #ind,
-                X, y, 
-                is_classification=self.classification,
+        self.final_object_function_list =[ lambda pipeline_individual, X=X, y=y,is_classification=self.classification,
                 scorers= self._scorers, cv=self.cv_gen, other_objective_functions=self.other_objective_functions,
-                **kwargs,
-                )]
+                 memory=self.memory, cross_val_predict_cv=self.cross_val_predict_cv, subset_column=self.subset_column, **kwargs: objective_function_generator(
+                                pipeline_individual,
+                                #ind,
+                                X, y, 
+                                is_classification=is_classification,
+                                scorers= scorers, cv=cv, other_objective_functions=other_objective_functions,
+                                memory=memory, cross_val_predict_cv=cross_val_predict_cv, subset_column=subset_column,
+                                **kwargs,
+                                )]
 
 
         #If warm start and we have an evolver instance, use the existing one
@@ -552,13 +541,13 @@ class TPOTEstimator(BaseEstimator):
             #reshuffle rows
             X, y = sklearn.utils.shuffle(X, y, random_state=1)
 
-            val_objective_function_list = [lambda ind, **kwargs: objective_function_generator(
-                ind,
-                X,y, 
-                is_classification=self.classification,
-                scorers= self._scorers, cv=self.cv_gen, other_objective_functions=self.other_objective_functions,
-                **kwargs,
-                )]
+            val_objective_function_list = [lambda ind, X=X, y=y, is_classification=self.classification,scorers= self._scorers, cv=self.cv_gen, other_objective_functions=self.other_objective_functions, **kwargs: objective_function_generator(
+                                                                                                ind,
+                                                                                                X,y, 
+                                                                                                is_classification=is_classification,
+                                                                                                scorers= scorers, cv=cv, other_objective_functions=other_objective_functions,
+                                                                                                **kwargs,
+                                                                                                )]
             
             val_scores = tpot2.objectives.parallel_eval_objective_list(
                 best_pareto_front,
@@ -571,27 +560,15 @@ class TPOTEstimator(BaseEstimator):
         elif validation_strategy == 'split':
 
                 
-            def val_objective_function_generator(pipeline, X_train, y_train, X_test, y_test, scorers, other_objective_functions):
-                #subsample the data
-                fitted_pipeline = sklearn.base.clone(pipeline)
-                fitted_pipeline.fit(X_train, y_train)
 
-                this_fold_scores = [sklearn.metrics.get_scorer(scorer)(fitted_pipeline, X_test, y_test) for scorer in scorers] 
-                
-                other_scores = []
-                #TODO use same exported pipeline as for each objective
-                if other_objective_functions is not None and len(other_objective_functions) >0:
-                    other_scores = [obj(sklearn.base.clone(pipeline)) for obj in other_objective_functions]
-                
-                return np.concatenate([this_fold_scores,other_scores])
 
             best_pareto_front_idx = list(self.pareto_front.index)
             best_pareto_front = self.pareto_front.loc[best_pareto_front_idx]['Instance']
-            val_objective_function_list = [lambda ind, **kwargs: val_objective_function_generator(
+            val_objective_function_list = [lambda ind, X=X, y=y, X_val=X_val, y_val=y_val, scorers= self._scorers, other_objective_functions=self.other_objective_functions, **kwargs: val_objective_function_generator(
                 ind,
                 X,y,
                 X_val, y_val, 
-                scorers= self._scorers, other_objective_functions=self.other_objective_functions,
+                scorers= scorers, other_objective_functions=other_objective_functions,
                 **kwargs,
                 )]
             
@@ -760,3 +737,39 @@ def recursive_with_defaults(config_dict, n_samples, n_features, classification, 
                 config_dict[key] = get_configuration_dictionary(value, n_samples, n_features, classification, subsets, feature_names)
         
     return config_dict
+
+
+
+def objective_function_generator(pipeline, x,y, scorers, cv, other_objective_functions, memory=None, cross_val_predict_cv=None, subset_column=None, step=None, budget=None, generation=1,is_classification=True):
+    #subsample the data
+    pipeline = pipeline.export_pipeline(memory=memory, cross_val_predict_cv=cross_val_predict_cv, subset_column=subset_column)
+    if budget is not None and budget < 1:
+        if is_classification:
+            x,y = sklearn.utils.resample(x,y, stratify=y, n_samples=int(budget*len(x)), replace=False, random_state=1)
+        else:
+            x,y = sklearn.utils.resample(x,y, n_samples=int(budget*len(x)), replace=False, random_state=1)
+
+    cv_obj_scores = tpot2.estimator_objective_functions.cross_val_score_objective(sklearn.base.clone(pipeline),x,y,scorers=scorers, cv=cv , fold=step)
+    
+    other_scores = []
+    
+    if other_objective_functions is not None and len(other_objective_functions) >0:
+        other_scores = [obj(sklearn.base.clone(pipeline)) for obj in other_objective_functions]
+    
+    return np.concatenate([cv_obj_scores,other_scores])
+
+
+def val_objective_function_generator(pipeline, X_train, y_train, X_test, y_test, scorers, other_objective_functions, memory=None, cross_val_predict_cv=None, subset_column=None, ):
+    #subsample the data
+    pipeline = pipeline.export_pipeline(memory=memory, cross_val_predict_cv=cross_val_predict_cv, subset_column=subset_column)
+    fitted_pipeline = sklearn.base.clone(pipeline)
+    fitted_pipeline.fit(X_train, y_train)
+
+    this_fold_scores = [sklearn.metrics.get_scorer(scorer)(fitted_pipeline, X_test, y_test) for scorer in scorers] 
+    
+    other_scores = []
+    #TODO use same exported pipeline as for each objective
+    if other_objective_functions is not None and len(other_objective_functions) >0:
+        other_scores = [obj(sklearn.base.clone(pipeline)) for obj in other_objective_functions]
+    
+    return np.concatenate([this_fold_scores,other_scores])
