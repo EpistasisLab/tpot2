@@ -14,6 +14,8 @@ import pickle
 import statistics
 from tqdm.dask import TqdmCallback
 
+from dask.distributed import Client
+from dask.distributed import LocalCluster
 
 class BaseEvolver():
     def __init__(   self, 
@@ -205,7 +207,13 @@ class BaseEvolver():
         self.generations_until_end_budget = generations_until_end_budget
         self.stepwise_steps = stepwise_steps
 
-        self.client = client
+        if client is not None:
+            self.client = client
+        else:
+            cluster = LocalCluster(n_workers=n_jobs, #n_jobs
+                    threads_per_worker=1,)
+                   # memory_limit='64GB') #memory limit is per thread. don't know if possible to do memory limit globally?
+            self.client = Client(cluster)
 
         if self.initial_population_size != self.population_size:
             self.population_size_list = beta_interpolation(start=self.cur_population_size, end=self.population_size, scale=self.population_scaling, n=generations_until_end_population, n_steps=self.stepwise_steps)
@@ -461,7 +469,7 @@ class BaseEvolver():
                 print("No new individuals to evaluate")
             return
 
-        scores = tpot2.objectives.parallel_eval_objective_list(individuals_to_evaluate, self.objective_functions, self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds, budget=budget, n_expected_columns=len(self.objective_names))
+        scores = tpot2.objectives.parallel_eval_objective_list(individuals_to_evaluate, self.objective_functions, self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds, budget=budget, n_expected_columns=len(self.objective_names), client=self.client )
 
 
         self.population.update_column(individuals_to_evaluate, column_names=self.objective_names, data=scores)
@@ -529,7 +537,8 @@ class BaseEvolver():
                                     step=step,
                                     budget = self.budget,
                                     generation = self.generation,
-                                    n_expected_columns=len(self.objective_names)
+                                    n_expected_columns=len(self.objective_names),
+                                    client=self.client,
                                     )
 
             self.population.update_column(unevaluated_individuals_this_step, column_names=this_step_names, data=scores)

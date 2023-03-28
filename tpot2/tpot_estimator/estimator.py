@@ -12,7 +12,8 @@ from sklearn.utils.multiclass import unique_labels
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import tpot2
-
+from dask.distributed import Client
+from dask.distributed import LocalCluster
 
 EVOLVERS = {"nsga2":tpot2.evolutionary_algorithms.eaNSGA2.eaNSGA2_Evolver}
 
@@ -358,6 +359,13 @@ class TPOTEstimator(BaseEstimator):
         self.subsets = subsets
         self.client = client
 
+        if self.client is not None:
+            self._client = self.client
+        else:
+            cluster = LocalCluster(n_workers=n_jobs, #n_jobs
+                    threads_per_worker=1,)
+            self._client = Client(cluster)
+
         #Initialize other used params
         self.objective_function_weights = [*scorers_weights, *other_objective_functions_weights]
         
@@ -530,7 +538,7 @@ class TPOTEstimator(BaseEstimator):
                                             population_scaling = self.population_scaling,
                                             generations_until_end_population = self.generations_until_end_population,
                                             stepwise_steps = self.stepwise_steps,
-                                            client = self.client,
+                                            client = self._client,
                                             **self.evolver_params)
 
         
@@ -555,7 +563,7 @@ class TPOTEstimator(BaseEstimator):
             
             val_scores = tpot2.objectives.parallel_eval_objective_list(
                 best_pareto_front,
-                val_objective_function_list, n_jobs=self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds,n_expected_columns=len(self.objective_names))
+                val_objective_function_list, n_jobs=self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds,n_expected_columns=len(self.objective_names), client=self._client)
 
             val_objective_names = ['validation_'+name for name in self.objective_names]
             self.objective_names_for_selection = val_objective_names
@@ -578,7 +586,7 @@ class TPOTEstimator(BaseEstimator):
             
             val_scores = tpot2.objectives.parallel_eval_objective_list(
                 best_pareto_front,
-                val_objective_function_list, n_jobs=self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds,n_expected_columns=len(self.objective_names))
+                val_objective_function_list, n_jobs=self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds,n_expected_columns=len(self.objective_names),client=self._client)
 
             val_objective_names = ['validation_'+name for name in self.objective_names]
             self.objective_names_for_selection = val_objective_names
