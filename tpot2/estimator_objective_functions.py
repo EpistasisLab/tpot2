@@ -34,6 +34,13 @@ def cross_val_score_objective(pipeline, X, y, scorers, cv, fold=None):
 
             this_fold_scores = [sklearn.metrics.get_scorer(scorer)(this_fold_pipeline, X_test, y_test) for scorer in scorers] 
             scores.append(this_fold_scores)
+            del this_fold_pipeline
+            del X_train
+            del X_test
+            del y_train
+            del y_test
+            
+
         return np.mean(scores,0)
     else:
         this_fold_pipeline = sklearn.base.clone(pipeline)

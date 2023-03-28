@@ -85,6 +85,8 @@ class TPOTEstimator(BaseEstimator):
                         subset_column = None,
 
                         stepwise_steps = 5,
+
+                        client = None,
                         ):
                         
         '''
@@ -354,6 +356,7 @@ class TPOTEstimator(BaseEstimator):
         self.generations_until_end_population = generations_until_end_population
 
         self.subsets = subsets
+        self.client = client
 
         #Initialize other used params
         self.objective_function_weights = [*scorers_weights, *other_objective_functions_weights]
@@ -527,6 +530,7 @@ class TPOTEstimator(BaseEstimator):
                                             population_scaling = self.population_scaling,
                                             generations_until_end_population = self.generations_until_end_population,
                                             stepwise_steps = self.stepwise_steps,
+                                            client = self.client,
                                             **self.evolver_params)
 
         

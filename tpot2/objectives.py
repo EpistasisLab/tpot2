@@ -82,15 +82,29 @@ def parallel_eval_objective_list(individual_list,
                                 verbose=0,
                                 timeout=None,
                                 n_expected_columns=None,
+                                client=None,
                                 **objective_kwargs    ):
 
     #offspring_scores = Parallel(n_jobs=n_jobs)(delayed(eval_objective_list)(ind,  objective_list, verbose, timeout=timeout)  for ind in individual_list )
-    delayed_values = [dask.delayed(eval_objective_list)(ind,  objective_list, verbose, timeout=timeout,**objective_kwargs)  for ind in individual_list]
     
+    # delayed_values = [dask.delayed(eval_objective_list)(ind,  objective_list, verbose, timeout=timeout,**objective_kwargs)  for ind in individual_list]
+    # with TqdmCallback(desc="Evaluating Individuals", disable=verbose<2, leave=False):
+    #     offspring_scores = list(dask.compute( *delayed_values,
+    #                             num_workers=n_jobs))
+    # del delayed_values
+    if client is None:
+        client = dask.distributed.get_client()
+    futures = [client.submit(eval_objective_list, ind,  objective_list, verbose, timeout=timeout,**objective_kwargs)  for ind in individual_list]
     with TqdmCallback(desc="Evaluating Individuals", disable=verbose<2, leave=False):
-        offspring_scores = list(dask.compute( *delayed_values,
-                                num_workers=n_jobs))
+        dask.distributed.wait(futures)
     
+    offspring_scores = []
+    # todo optimize this
+    for future in futures:
+        if not future.exception():
+            offspring_scores.append(future.result())
+        else:
+            offspring_scores.append(["INVALID"])
 
     if n_expected_columns is not None:
         offspring_scores = process_scores(offspring_scores, n_expected_columns)

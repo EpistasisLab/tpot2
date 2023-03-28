@@ -56,6 +56,7 @@ class BaseEvolver():
                     generations_until_end_budget = 1,                    
                     stepwise_steps = 5,
 
+                    client=None,
                     ) -> None:
         """
         Uses mutation, crossover, and optimization functions to evolve a population of individuals towards the given objective functions.
@@ -203,6 +204,8 @@ class BaseEvolver():
         self.budget_scaling = budget_scaling
         self.generations_until_end_budget = generations_until_end_budget
         self.stepwise_steps = stepwise_steps
+
+        self.client = client
 
         if self.initial_population_size != self.population_size:
             self.population_size_list = beta_interpolation(start=self.cur_population_size, end=self.population_size, scale=self.population_scaling, n=generations_until_end_population, n_steps=self.stepwise_steps)
