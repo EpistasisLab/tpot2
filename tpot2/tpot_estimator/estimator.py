@@ -467,10 +467,16 @@ class TPOTEstimator(BaseEstimator):
             optuna_objective = None
 
 
+        #check if self.cv is a number
+        if isinstance(self.cv, int):
+            if self.classification:
+                self.cv_gen = sklearn.model_selection.StratifiedKFold(n_splits=self.cv, shuffle=True, random_state=42)
+            else:
+                self.cv_gen = sklearn.model_selection.KFold(n_splits=self.cv, shuffle=True, random_state=42)
 
-        self.cv_gen = sklearn.model_selection.check_cv(self.cv, y, classifier=self.classification)
-        self.cv_gen.shuffle = True
-        self.cv_gen.random_state = 1
+        else:
+            self.cv_gen = sklearn.model_selection.check_cv(self.cv, y, classifier=self.classification)
+
 
         self.individual_generator_instance = tpot2.estimator_graph_individual_generator(   
                                                             inner_config_dict=inner_config_dict,
