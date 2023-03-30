@@ -111,7 +111,9 @@ class TPOTEstimator(BaseEstimator):
         
         - scorers_weights (list): A list of weights to be applied to the scorers during the optimization process.
         
-        - cv (int): Number of folds to use in the cross-validation process.
+        - cv 
+            - (int): Number of folds to use in the cross-validation process. By uses the sklearn.model_selection.KFold cross-validator for regression and StratifiedKFold for classification. In both cases, shuffled is set to True.
+            - (sklearn.model_selection.BaseCrossValidator): A cross-validator to use in the cross-validation process.
         
         - verbose (int): How much information to print during the optimization process. Higher values include the information from lower values.
             0. nothing
