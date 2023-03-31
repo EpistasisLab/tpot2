@@ -1,7 +1,7 @@
 import tpot2
 import numpy as np
 from ..estimator import TPOTEstimator
-
+from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 #TODO These do not follow sklearn conventions of __init__
 
 class TPOTRegressor(TPOTEstimator):
@@ -36,7 +36,7 @@ class TPOTRegressor(TPOTEstimator):
 
                         max_time_seconds=float('inf'), 
                         max_eval_time_seconds=60*10, #TODO auto set a timer? Should this be none?
-                        
+                        memory_limit = '4GB',
 
                         n_initial_optimizations = 0,
                         optimization_cv = 3,
@@ -100,6 +100,7 @@ class TPOTRegressor(TPOTEstimator):
             leaf_config_dict= leaf_config_dict,
             subsets = subsets,
             max_time_seconds=max_time_seconds,
+            memory_limit = memory_limit,
             max_eval_time_seconds=max_eval_time_seconds, #TODO auto set a timer? Should this be none?
             n_initial_optimizations = n_initial_optimizations,
             optimization_cv = optimization_cv,
@@ -130,7 +131,6 @@ class TPOTRegressor(TPOTEstimator):
 
 class TPOTClassifier(TPOTEstimator):
     def __init__(       self,
-                        *args,
                         scorers = ['roc_auc_ovr'], #these get passed into CV
                         scorers_weights = [1],
                         classification=True,
@@ -160,7 +160,7 @@ class TPOTClassifier(TPOTEstimator):
 
                         max_time_seconds=float('inf'), 
                         max_eval_time_seconds=60*10, #TODO auto set a timer? Should this be none?
-                        
+                        memory_limit = '4GB',
 
                         n_initial_optimizations = 0,
                         optimization_cv = 3,
@@ -196,9 +196,9 @@ class TPOTClassifier(TPOTEstimator):
                         subset_column = None,
 
                         stepwise_steps = 5,
+                        client=None,
         ):
         super(TPOTClassifier,self).__init__(
-            *args,
             scorers = scorers, #these get passed into CV
             scorers_weights = scorers_weights,
             classification=classification,
@@ -225,6 +225,7 @@ class TPOTClassifier(TPOTEstimator):
             subsets = subsets,
             max_time_seconds=max_time_seconds,
             max_eval_time_seconds=max_eval_time_seconds, #TODO auto set a timer? Should this be none?
+            memory_limit=memory_limit,
             n_initial_optimizations = n_initial_optimizations,
             optimization_cv = optimization_cv,
             max_optimize_time_seconds=max_optimize_time_seconds,
@@ -249,4 +250,11 @@ class TPOTClassifier(TPOTEstimator):
             validation_fraction = validation_fraction,
             subset_column = subset_column,
             stepwise_steps = stepwise_steps,
+            client=client,
         )
+
+
+    def predict(self, X, **predict_params):
+        check_is_fitted(self)
+        #X = check_array(X)
+        return self.fitted_pipeline_.predict(X,**predict_params)

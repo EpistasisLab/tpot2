@@ -31,9 +31,8 @@ class TPOTEstimator(BaseEstimator):
                         generations_until_end_population = 1,  
                         callback: tpot2.CallBackInterface = None,
                         n_jobs=1,
-                        
                         cv = 5,
-                        verbose = 0, #TODO
+                        verbose = 0, 
                         other_objective_functions=[tpot2.estimator_objective_functions.average_path_length_objective], #tpot2.estimator_objective_functions.complexity_objective],
                         other_objective_functions_weights = [-1],
                         bigger_is_better = True,
@@ -45,48 +44,34 @@ class TPOTEstimator(BaseEstimator):
                         root_config_dict= 'Auto',
                         inner_config_dict=["selectors", "transformers"],
                         leaf_config_dict= None,
-
                         subsets = None,
-
                         max_time_seconds=float('inf'), 
                         max_eval_time_seconds=60*10, 
-                        
-
+                        memory_limit = "4GB",
                         n_initial_optimizations = 0,
                         optimization_cv = 3,
                         max_optimize_time_seconds=60*20,
                         optimization_steps = 10,
-
                         periodic_checkpoint_folder = None,
-
                         threshold_evaluation_early_stop = None, 
                         threshold_evaluation_scaling = 4,
                         min_history_threshold = 20,
                         selection_evaluation_early_stop = None, 
                         selection_evaluation_scaling = 4, 
-
                         scorers_early_stop_tol = 0.001,
                         other_objectives_early_stop_tol =None,
                         early_stop = None,
-
                         warm_start = False,
                         memory = None,
                         cross_val_predict_cv = 0,
-                        
                         budget_range = None,
                         budget_scaling = .8,
                         generations_until_end_budget = 1,  
-
-
                         preprocessing = False,  
-
                         validation_strategy = "none",
                         validation_fraction = .2,
-
                         subset_column = None,
-
                         stepwise_steps = 5,
-
                         client = None,
                         ):
                         
@@ -287,15 +272,65 @@ class TPOTEstimator(BaseEstimator):
 
         '''
 
-
-        self.callback=callback
+        # sklearn BaseEstimator must have a corresponding attribute for each parameter.
+        # These should not be modified once set.
+        self.scorers = scorers
+        self.scorers_weights = scorers_weights
+        self.classification = classification
         self.population_size = population_size
         self.generations = generations
-        self.n_jobs= n_jobs
-        self.scorers = scorers
-
-        self.warm_start=warm_start
         self.initial_population_size = initial_population_size
+        self.population_scaling = population_scaling
+        self.generations_until_end_population = generations_until_end_population
+        self.callback = callback
+        self.n_jobs= n_jobs
+        self.cv = cv
+        self.verbose = verbose
+        self.other_objective_functions = other_objective_functions
+        self.other_objective_functions_weights = other_objective_functions_weights
+        self.bigger_is_better = bigger_is_better
+        self.evolver = evolver
+        self.evolver_params  = evolver_params
+        self.max_depth = max_depth
+        self.max_size = max_size
+        self.max_children = max_children
+        self.root_config_dict= root_config_dict
+        self.inner_config_dict= inner_config_dict
+        self.leaf_config_dict= leaf_config_dict
+        self.subsets = subsets
+        self.max_time_seconds = max_time_seconds 
+        self.max_eval_time_seconds = max_eval_time_seconds
+        self.memory_limit = memory_limit
+        self.n_initial_optimizations  = n_initial_optimizations  
+        self.optimization_cv  = optimization_cv
+        self.max_optimize_time_seconds = max_optimize_time_seconds 
+        self.optimization_steps = optimization_steps 
+        self.periodic_checkpoint_folder = periodic_checkpoint_folder
+        self.threshold_evaluation_early_stop =threshold_evaluation_early_stop
+        self.threshold_evaluation_scaling =  threshold_evaluation_scaling
+        self.min_history_threshold = min_history_threshold
+        self.selection_evaluation_early_stop = selection_evaluation_early_stop
+        self.selection_evaluation_scaling =  selection_evaluation_scaling
+        self.scorers_early_stop_tol = scorers_early_stop_tol
+        self.other_objectives_early_stop_tol = other_objectives_early_stop_tol
+        self.early_stop = early_stop
+        self.warm_start = warm_start
+        self.memory = memory
+        self.cross_val_predict_cv = cross_val_predict_cv
+        self.budget_range = budget_range
+        self.budget_scaling = budget_scaling
+        self.generations_until_end_budget = generations_until_end_budget
+        self.preprocessing = preprocessing
+        self.validation_strategy = validation_strategy
+        self.validation_fraction = validation_fraction
+        self.subset_column = subset_column
+        self.stepwise_steps = stepwise_steps
+        self.client = client
+
+
+        #Initialize other used params
+
+
         if self.initial_population_size is None:
             self._initial_population_size = self.population_size
         else:
@@ -310,86 +345,20 @@ class TPOTEstimator(BaseEstimator):
             self._scorers = self.scorers
         
         self._scorers = [sklearn.metrics.get_scorer(scoring) for scoring in self._scorers]
-
-        self.bigger_is_better = bigger_is_better
-
-        self.cv = cv
-        self.other_objective_functions = other_objective_functions
-
-        self.evolver = evolver
+        self._scorers_early_stop_tol = self.scorers_early_stop_tol
+        
         if isinstance(self.evolver, str):
             self._evolver = EVOLVERS[self.evolver]
         else:
             self._evolver = self.evolver
         
-        self.evolver_params  = evolver_params
+       
 
-        self.scorers_weights = scorers_weights
-        self.other_objective_functions_weights = other_objective_functions_weights
-
-        self.verbose = verbose
-
-        self.max_depth = max_depth
-        self.max_size = max_size
-        self.max_children = max_children
-
-        self.inner_config_dict= inner_config_dict
-        self.root_config_dict= root_config_dict
-        self.leaf_config_dict= leaf_config_dict
-
-        self.max_time_seconds =max_time_seconds 
-        self.max_eval_time_seconds = max_eval_time_seconds
-        self.classification = classification
-
-        self.periodic_checkpoint_folder = periodic_checkpoint_folder
-
-        self.n_initial_optimizations  = n_initial_optimizations  
-        self.optimization_cv  = optimization_cv
-        self.max_optimize_time_seconds = max_optimize_time_seconds 
-        self.optimization_steps = optimization_steps 
-
-        self.threshold_evaluation_early_stop =threshold_evaluation_early_stop
-        self.threshold_evaluation_scaling =  threshold_evaluation_scaling
-        self.min_history_threshold = min_history_threshold
-
-        self.selection_evaluation_early_stop = selection_evaluation_early_stop
-        self.selection_evaluation_scaling =  selection_evaluation_scaling
-        
-        self.population_scaling = population_scaling
-        self.generations_until_end_population = generations_until_end_population
-
-        self.subsets = subsets
-        self.client = client
-
-        if self.client is not None:
-            self._client = self.client
-        else:
-            cluster = LocalCluster(n_workers=n_jobs, #n_jobs
-                    threads_per_worker=1,)
-            self._client = Client(cluster)
-
-        #Initialize other used params
         self.objective_function_weights = [*scorers_weights, *other_objective_functions_weights]
         
         self.objective_names = [f._score_func.__name__ if hasattr(f,"_score_func") else f.__name__ for f in self._scorers] + [f.__name__ for f in other_objective_functions]
-        self.scorers_early_stop_tol = scorers_early_stop_tol
-        self._scorers_early_stop_tol = self.scorers_early_stop_tol
-        self.other_objectives_early_stop_tol = other_objectives_early_stop_tol
-        self.early_stop = early_stop
-        self.memory = memory
-        self.cross_val_predict_cv = cross_val_predict_cv
-
-        self.budget_range = budget_range
-        self.budget_scaling = budget_scaling
-        self.generations_until_end_budget = generations_until_end_budget
-        self.preprocessing = preprocessing
-
-        self.validation_strategy = validation_strategy
-        self.validation_fraction = validation_fraction
-
-        self.subset_column = subset_column
-        self.stepwise_steps = stepwise_steps
-
+        
+        
         if not isinstance(self.other_objectives_early_stop_tol, list):
             self._other_objectives_early_stop_tol = [self.other_objectives_early_stop_tol for _ in range(len(self.other_objective_functions))]
         else:
@@ -407,6 +376,22 @@ class TPOTEstimator(BaseEstimator):
 
 
     def fit(self, X, y):
+
+        if self.client is not None:
+           _client = self.client
+        else:
+            if self.verbose >= 4:
+                silence_logs = 30
+            elif self.verbose >=5:
+                silence_logs = 40
+            else:
+                silence_logs = 50
+
+            cluster = LocalCluster(n_workers=self.n_jobs, #n_jobs
+                    threads_per_worker=1,
+                    silence_logs=silence_logs,
+                    memory_limit=self.memory_limit)
+            _client = Client(cluster)
 
         self.evaluated_individuals = None
         #determine validation strategy
@@ -546,7 +531,7 @@ class TPOTEstimator(BaseEstimator):
                                             population_scaling = self.population_scaling,
                                             generations_until_end_population = self.generations_until_end_population,
                                             stepwise_steps = self.stepwise_steps,
-                                            client = self._client,
+                                            client = _client,
                                             **self.evolver_params)
 
         
@@ -571,7 +556,7 @@ class TPOTEstimator(BaseEstimator):
             
             val_scores = tpot2.objectives.parallel_eval_objective_list(
                 best_pareto_front,
-                val_objective_function_list, n_jobs=self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds,n_expected_columns=len(self.objective_names), client=self._client)
+                val_objective_function_list, n_jobs=self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds,n_expected_columns=len(self.objective_names), client=_client)
 
             val_objective_names = ['validation_'+name for name in self.objective_names]
             self.objective_names_for_selection = val_objective_names
@@ -594,7 +579,7 @@ class TPOTEstimator(BaseEstimator):
             
             val_scores = tpot2.objectives.parallel_eval_objective_list(
                 best_pareto_front,
-                val_objective_function_list, n_jobs=self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds,n_expected_columns=len(self.objective_names),client=self._client)
+                val_objective_function_list, n_jobs=self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds,n_expected_columns=len(self.objective_names),client=_client)
 
             val_objective_names = ['validation_'+name for name in self.objective_names]
             self.objective_names_for_selection = val_objective_names
@@ -635,6 +620,9 @@ class TPOTEstimator(BaseEstimator):
         )
 
 
+    #
+    # TODO Originally I wanted this to be only available if using classifiers/regressors and unavailable if using transformers
+    # But this makes it 
     @available_if(_estimator_has('predict'))
     def predict(self, X, **predict_params):
         check_is_fitted(self)
