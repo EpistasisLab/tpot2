@@ -376,7 +376,6 @@ class TPOTEstimator(BaseEstimator):
 
 
     def fit(self, X, y):
-
         if self.client is not None:
            _client = self.client
         else:
@@ -423,7 +422,7 @@ class TPOTEstimator(BaseEstimator):
         else:
             self._preprocessing_pipeline = None
 
-        _, y = sklearn.utils.check_X_y(X, y, y_numeric=True)
+        #_, y = sklearn.utils.check_X_y(X, y, y_numeric=True)
 
         #Set up the configuation dictionaries and the search spaces
         n_samples=X.shape[0]
@@ -610,6 +609,11 @@ class TPOTEstimator(BaseEstimator):
         if self.verbose >= 3:
             best_individual.plot()
 
+        if self.client is not None:
+            #close cluster and client
+            _client.close()
+            cluster.close()
+
     def _estimator_has(attr):
         '''Check if we can delegate a method to the underlying estimator.
         First, we check the first fitted final estimator if available, otherwise we
@@ -620,9 +624,10 @@ class TPOTEstimator(BaseEstimator):
         )
 
 
-    #
-    # TODO Originally I wanted this to be only available if using classifiers/regressors and unavailable if using transformers
-    # But this makes it 
+
+    
+
+
     @available_if(_estimator_has('predict'))
     def predict(self, X, **predict_params):
         check_is_fitted(self)
