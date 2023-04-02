@@ -479,7 +479,8 @@ class TPOTEstimator(BaseEstimator):
             evalutation_early_stop_steps = None
 
 
-
+        # X = _client.scatter(X)
+        # y = _client.scatter(y)
 
         #.export_pipeline(memory=self.memory, cross_val_predict_cv=self.cross_val_predict_cv, subset_column=self.subset_column),
         #tmp = partial(objective_function_generator, scorers= self._scorers, cv=self.cv_gen, other_objective_functions=self.other_objective_functions )
@@ -609,11 +610,13 @@ class TPOTEstimator(BaseEstimator):
         if self.verbose >= 3:
             best_individual.plot()
 
-        if self.client is not None:
+        if self.client is None:
             #close cluster and client
             _client.close()
             cluster.close()
 
+        return self
+        
     def _estimator_has(attr):
         '''Check if we can delegate a method to the underlying estimator.
         First, we check the first fitted final estimator if available, otherwise we
