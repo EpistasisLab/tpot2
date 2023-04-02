@@ -693,11 +693,13 @@ def _convert_parents_tuples_to_integers(row, object_to_int):
         return np.nan
 
 def _apply_make_pipeline(graphindividual, preprocessing_pipeline=None):
-    if preprocessing_pipeline is None:
-        return graphindividual.export_pipeline()
-    else:
-        return sklearn.pipeline.make_pipeline(sklearn.base.clone(preprocessing_pipeline), graphindividual.export_pipeline())
-
+    try: 
+        if preprocessing_pipeline is None:
+            return graphindividual.export_pipeline()
+        else:
+            return sklearn.pipeline.make_pipeline(sklearn.base.clone(preprocessing_pipeline), graphindividual.export_pipeline())
+    except:
+        return None
 
 def get_configuration_dictionary(options, n_samples, n_features, classification, subsets=None, feature_names=None):
     if options is None:
