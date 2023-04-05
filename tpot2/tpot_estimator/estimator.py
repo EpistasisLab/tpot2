@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 import tpot2
 from dask.distributed import Client
 from dask.distributed import LocalCluster
+import math
 
 EVOLVERS = {"nsga2":tpot2.evolutionary_algorithms.eaNSGA2.eaNSGA2_Evolver}
 
@@ -154,6 +155,9 @@ class TPOTEstimator(BaseEstimator):
             - 'passthrough' : A node that just passes though the input. Useful for passing through raw inputs into inner nodes.
             - 'feature_set_selector' : A selector that pulls out specific subsets of columns from the data. Only well defined as a leaf.
                                         Subsets are set with the subsets parameter.
+            - 'skrebate' : Includes ReliefF, SURF, SURFstar, MultiSURF.
+            - 'MDR' : Includes MDR.
+            - 'ContinuousMDR' : Includes ContinuousMDR.
             - list : a list of strings out of the above options to include the corresponding methods in the configuration dictionary.
 
         - leaf_config_dict (dict): The configuration dictionary to use for the leaf node of the model. If set, leaf nodes must be from this dictionary.
@@ -425,7 +429,13 @@ class TPOTEstimator(BaseEstimator):
         #_, y = sklearn.utils.check_X_y(X, y, y_numeric=True)
 
         #Set up the configuation dictionaries and the search spaces
-        n_samples=X.shape[0]
+
+        if isinstance(self.cv, int) or isinstance(self.cv, float):
+            n_folds = self.cv
+        else:
+            n_folds = self.cv.n_splits
+
+        n_samples= int(math.floor(X.shape[0]/n_folds))
         n_features=X.shape[1]
 
         if isinstance(X, pd.DataFrame):
@@ -454,7 +464,7 @@ class TPOTEstimator(BaseEstimator):
 
 
         #check if self.cv is a number
-        if isinstance(self.cv, int):
+        if isinstance(self.cv, int) or isinstance(self.cv, float):
             if self.classification:
                 self.cv_gen = sklearn.model_selection.StratifiedKFold(n_splits=self.cv, shuffle=True, random_state=42)
             else:
@@ -728,8 +738,18 @@ def get_configuration_dictionary(options, n_samples, n_features, classification,
         elif option == "feature_set_selector":
             config_dict.update(tpot2.config.make_FSS_config_dictionary(subsets, n_features, feature_names=feature_names))
 
+        elif option == "skrebate":
+            config_dict.update(tpot2.config.make_skrebate_config_dictionary(n_features=n_features))
+        
+        elif option == "MDR":
+            config_dict.update(tpot2.config.make_MDR_config_dictionary())
+        
+        elif option == "ContinuousMDR":
+            config_dict.update(tpot2.config.make_ContinuousMDR_config_dictionary())
+
         elif option == "passthrough":
             config_dict.update(tpot2.config.make_passthrough_config_dictionary())
+        
 
         else:
             config_dict.update(recursive_with_defaults(option, n_samples, n_features, classification, subsets=subsets, feature_names=feature_names))

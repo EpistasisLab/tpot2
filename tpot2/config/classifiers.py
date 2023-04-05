@@ -46,7 +46,7 @@ def params_LogisticRegression(trial, name=None):
 def params_KNeighborsClassifier(trial, name=None, n_samples=10):
     return {
         #'n_neighbors': trial.suggest_int(f'n_neighbors_{name}', 1, 20 ), #TODO: set as a function of the number of samples
-        'n_neighbors': trial.suggest_int(f'n_neighbors_{name}', 1, 100 ), #TODO: set as a function of the number of samples
+        'n_neighbors': trial.suggest_int(f'n_neighbors_{name}', 1, n_samples, log=True ), #TODO: set as a function of the number of samples
         'weights': trial.suggest_categorical(f'weights_{name}', ['uniform', 'distance']),
         'p': trial.suggest_int('p', 1, 3),
         'metric': trial.suggest_categorical(f'metric_{name}', ['euclidean', 'minkowski']),
@@ -172,7 +172,7 @@ def params_ExtraTreesClassifier(trial, name=None):
 
 def params_SGDClassifier(trial, name=None):
     params = {
-        'loss': trial.suggest_categorical(f'loss_{name}', ['log_loss', 'hinge', 'modified_huber', 'squared_hinge', 'perceptron']),
+        'loss': trial.suggest_categorical(f'loss_{name}', ['log_loss', 'modified_huber',]),
         'penalty': 'elasticnet',
         'alpha': trial.suggest_float(f'alpha_{name}', 1e-5, 0.01, log=True),
         'learning_rate': trial.suggest_categorical(f'learning_rate_{name}', ['invscaling', 'constant']),
