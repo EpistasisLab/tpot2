@@ -28,7 +28,7 @@ class TPOTRegressor(TPOTEstimator):
                         max_depth = np.inf,
                         max_size = np.inf, 
                         max_children = np.inf,
-                        root_config_dict= 'Auto',
+                        root_config_dict= 'regressors',
                         inner_config_dict=["selectors", "transformers"],
                         leaf_config_dict= None,
 
@@ -152,7 +152,7 @@ class TPOTClassifier(TPOTEstimator):
                         max_depth = np.inf,
                         max_size = np.inf, 
                         max_children = np.inf,
-                        root_config_dict= 'Auto',
+                        root_config_dict= 'classifiers',
                         inner_config_dict=["selectors", "transformers"],
                         leaf_config_dict= None,
 

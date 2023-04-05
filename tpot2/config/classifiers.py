@@ -138,6 +138,7 @@ def params_XGBClassifier(trial, name=None):
         'n_estimators': 100,
         'max_depth': trial.suggest_int(f'max_depth_{name}', 1, 11),
         'n_jobs': 1,
+        #'use_label_encoder' : True,
     }
 
 
