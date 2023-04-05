@@ -13,7 +13,7 @@ import os
 import pickle
 import statistics
 from tqdm.dask import TqdmCallback
-
+import distributed
 from dask.distributed import Client
 from dask.distributed import LocalCluster
 
@@ -59,6 +59,7 @@ class BaseEvolver():
                     stepwise_steps = 5,
 
                     client=None,
+                    memory_limit="4GB",
                     ) -> None:
         """
         Uses mutation, crossover, and optimization functions to evolve a population of individuals towards the given objective functions.
@@ -148,6 +149,10 @@ class BaseEvolver():
         - generations_until_max_budget (int): The number of generations to run before reaching the max budget.
 
         - stepwise_steps (int): The number of staircase steps to take when scaling the budget and population size.
+
+        - client (dask.distributed.Client): A dask client to use for parallelization. If not None, this will override the n_jobs and memory_limit parameters. If None, will create a new client. 
+
+        - memory_limit (str): The maximum amount of memory that the optimization process should use per thread. See https://docs.dask.org/en/stable/deploying-python.html
         """
 
 
@@ -207,13 +212,13 @@ class BaseEvolver():
         self.generations_until_end_budget = generations_until_end_budget
         self.stepwise_steps = stepwise_steps
 
-        if client is not None:
-            self.client = client
-        else:
-            cluster = LocalCluster(n_workers=n_jobs, #n_jobs
-                    threads_per_worker=1,)
-                   # memory_limit='64GB') #memory limit is per thread. don't know if possible to do memory limit globally?
-            self.client = Client(cluster)
+        self.memory_limit = memory_limit
+
+        self.client = client
+
+
+
+        ###########
 
         if self.initial_population_size != self.population_size:
             self.population_size_list = beta_interpolation(start=self.cur_population_size, end=self.population_size, scale=self.population_scaling, n=generations_until_end_population, n_steps=self.stepwise_steps)
@@ -270,6 +275,21 @@ class BaseEvolver():
 
     def optimize(self, generations=None):
 
+        if self.client is not None: #If user passed in a client manually
+           self._client = self.client
+        else:
+
+            if self.verbose >= 4:
+                silence_logs = 30
+            elif self.verbose >=5:
+                silence_logs = 40
+            else:
+                silence_logs = 50
+            self._cluster = LocalCluster(n_workers=self.n_jobs, #if no client is passed in and no global client exists, create our own
+                    threads_per_worker=1,
+                    silence_logs=silence_logs,
+                    memory_limit=self.memory_limit)
+            self._client = Client(cluster)
         
 
         if self.n_initial_optimizations > 0:
@@ -364,6 +384,9 @@ class BaseEvolver():
         if self.population_file is not None:
             pickle.dump(self.population, open(self.population_file, "wb"))
 
+        if self.client is None: #If we created our own client, close it
+            self._client.close()
+            self._cluster.close()
 
 
     def step(self,):
@@ -469,7 +492,7 @@ class BaseEvolver():
                 print("No new individuals to evaluate")
             return
 
-        scores = tpot2.objectives.parallel_eval_objective_list(individuals_to_evaluate, self.objective_functions, self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds, budget=budget, n_expected_columns=len(self.objective_names), client=self.client )
+        scores = tpot2.objectives.parallel_eval_objective_list(individuals_to_evaluate, self.objective_functions, self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds, budget=budget, n_expected_columns=len(self.objective_names), client=self._client )
 
 
         self.population.update_column(individuals_to_evaluate, column_names=self.objective_names, data=scores)
@@ -538,7 +561,7 @@ class BaseEvolver():
                                     budget = self.budget,
                                     generation = self.generation,
                                     n_expected_columns=len(self.objective_names),
-                                    client=self.client,
+                                    client=self._client,
                                     )
 
             self.population.update_column(unevaluated_individuals_this_step, column_names=this_step_names, data=scores)

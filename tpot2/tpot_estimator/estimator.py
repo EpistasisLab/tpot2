@@ -12,6 +12,7 @@ from sklearn.utils.multiclass import unique_labels
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import tpot2
+import distributed
 from dask.distributed import Client
 from dask.distributed import LocalCluster
 import math
@@ -187,6 +188,9 @@ class TPOTEstimator(BaseEstimator):
             If the evaluation takes longer than this, the model will be discarded.
             Set to None for no timer limit.
         
+            
+        - memory_limit (str): The maximum amount of memory that the optimization process should use per thread (in this case, per pipeline). See https://docs.dask.org/en/stable/deploying-python.html
+
         - classification (bool): A flag indicating whether the problem is a classification problem or not.
         
         - n_initial_optimizations (int): NOT YET IMPLEMENTED Number of initial optimizations to perform.
@@ -274,6 +278,8 @@ class TPOTEstimator(BaseEstimator):
          
         - stepwise_steps (int): EXPERIMENTAL The number of staircase steps to take when scaling the budget and population size.
 
+        - client (dask.distributed.Client): A dask client to use for parallelization. If not None, this will override the n_jobs and memory_limit parameters. If None, will create a new client. 
+        
         '''
 
         # sklearn BaseEstimator must have a corresponding attribute for each parameter.
@@ -380,21 +386,22 @@ class TPOTEstimator(BaseEstimator):
 
 
     def fit(self, X, y):
-        if self.client is not None:
+        if self.client is not None: #If user passed in a client manually
            _client = self.client
         else:
+
             if self.verbose >= 4:
                 silence_logs = 30
             elif self.verbose >=5:
                 silence_logs = 40
             else:
                 silence_logs = 50
-
-            cluster = LocalCluster(n_workers=self.n_jobs, #n_jobs
+            cluster = LocalCluster(n_workers=self.n_jobs, #if no client is passed in and no global client exists, create our own
                     threads_per_worker=1,
                     silence_logs=silence_logs,
                     memory_limit=self.memory_limit)
             _client = Client(cluster)
+
 
         self.evaluated_individuals = None
         #determine validation strategy
@@ -620,7 +627,7 @@ class TPOTEstimator(BaseEstimator):
         if self.verbose >= 3:
             best_individual.plot()
 
-        if self.client is None:
+        if self.client is None: #no client was passed in
             #close cluster and client
             _client.close()
             cluster.close()
