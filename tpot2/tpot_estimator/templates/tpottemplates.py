@@ -20,7 +20,7 @@ class TPOTRegressor(TPOTEstimator):
                         
                         cv = 5,
                         verbose = 0, #TODO
-                        other_objective_functions=[tpot2.estimator_objective_functions.average_path_length_objective], #tpot2.estimator_objective_functions.complexity_objective],
+                        other_objective_functions=[tpot2.estimator_objective_functions.average_path_length_objective], #tpot2.estimator_objective_functions.number_of_nodes_objective],
                         other_objective_functions_weights = [-1],
                         bigger_is_better = True,
                         evolver = "nsga2",
@@ -87,7 +87,7 @@ class TPOTRegressor(TPOTEstimator):
             n_jobs=n_jobs,
             cv = cv,
             verbose = verbose, #TODO
-            other_objective_functions=other_objective_functions, #tpot2.estimator_objective_functions.complexity_objective],
+            other_objective_functions=other_objective_functions, #tpot2.estimator_objective_functions.number_of_nodes_objective],
             other_objective_functions_weights = other_objective_functions_weights,
             bigger_is_better = bigger_is_better,
             evolver = evolver,
@@ -144,7 +144,7 @@ class TPOTClassifier(TPOTEstimator):
                         
                         cv = 5,
                         verbose = 0, #TODO
-                        other_objective_functions=[tpot2.estimator_objective_functions.average_path_length_objective], #tpot2.estimator_objective_functions.complexity_objective],
+                        other_objective_functions=[tpot2.estimator_objective_functions.average_path_length_objective], #tpot2.estimator_objective_functions.number_of_nodes_objective],
                         other_objective_functions_weights = [-1],
                         bigger_is_better = True,
                         evolver = "nsga2",
@@ -211,7 +211,7 @@ class TPOTClassifier(TPOTEstimator):
             n_jobs=n_jobs,
             cv = cv,
             verbose = verbose, #TODO
-            other_objective_functions=other_objective_functions, #tpot2.estimator_objective_functions.complexity_objective],
+            other_objective_functions=other_objective_functions, #tpot2.estimator_objective_functions.number_of_nodes_objective],
             other_objective_functions_weights = other_objective_functions_weights,
             bigger_is_better = bigger_is_better,
             evolver = evolver,

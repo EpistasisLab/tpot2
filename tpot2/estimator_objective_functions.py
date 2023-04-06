@@ -64,7 +64,7 @@ def cross_val_score_objective(pipeline, X, y, scorers, cv, fold=None):
 
 
 
-def complexity_objective(graph_pipeline):
+def number_of_nodes_objective(graph_pipeline):
     return graph_pipeline.graph.number_of_nodes()
 
 

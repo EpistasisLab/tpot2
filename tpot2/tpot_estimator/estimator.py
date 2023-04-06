@@ -35,7 +35,7 @@ class TPOTEstimator(BaseEstimator):
                         n_jobs=1,
                         cv = 5,
                         verbose = 0, 
-                        other_objective_functions=[tpot2.estimator_objective_functions.average_path_length_objective], #tpot2.estimator_objective_functions.complexity_objective],
+                        other_objective_functions=[tpot2.estimator_objective_functions.average_path_length_objective], #tpot2.estimator_objective_functions.number_of_nodes_objective],
                         other_objective_functions_weights = [-1],
                         bigger_is_better = True,
                         evolver = "nsga2",
