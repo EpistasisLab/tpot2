@@ -288,8 +288,9 @@ class BaseEvolver():
             self._cluster = LocalCluster(n_workers=self.n_jobs, #if no client is passed in and no global client exists, create our own
                     threads_per_worker=1,
                     silence_logs=silence_logs,
+                    processes=False,
                     memory_limit=self.memory_limit)
-            self._client = Client(cluster)
+            self._client = Client(self._cluster)
         
 
         if self.n_initial_optimizations > 0:

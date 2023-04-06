@@ -398,6 +398,7 @@ class TPOTEstimator(BaseEstimator):
                 silence_logs = 50
             cluster = LocalCluster(n_workers=self.n_jobs, #if no client is passed in and no global client exists, create our own
                     threads_per_worker=1,
+                    processes=False,
                     silence_logs=silence_logs,
                     memory_limit=self.memory_limit)
             _client = Client(cluster)
