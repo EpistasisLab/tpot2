@@ -795,9 +795,10 @@ def objective_function_generator(pipeline, x,y, scorers, cv, other_objective_fun
         else:
             x,y = sklearn.utils.resample(x,y, n_samples=int(budget*len(x)), replace=False, random_state=1)
 
-    cv_obj_scores = tpot2.estimator_objective_functions.cross_val_score_objective(sklearn.base.clone(pipeline),x,y,scorers=scorers, cv=cv , fold=step)
-    
-    other_scores = []
+    if len(scorers) == 0:
+        cv_obj_scores = []
+    else:
+        cv_obj_scores = tpot2.estimator_objective_functions.cross_val_score_objective(sklearn.base.clone(pipeline),x,y,scorers=scorers, cv=cv , fold=step)
     
     if other_objective_functions is not None and len(other_objective_functions) >0:
         other_scores = [obj(sklearn.base.clone(pipeline)) for obj in other_objective_functions]
