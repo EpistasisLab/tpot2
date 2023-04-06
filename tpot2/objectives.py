@@ -12,6 +12,7 @@ import dask
 import stopit
 from dask.diagnostics import ProgressBar
 from tqdm.dask import TqdmCallback
+from dask.distributed import progress
 
 import func_timeout
 
@@ -95,8 +96,9 @@ def parallel_eval_objective_list(individual_list,
     if client is None:
         client = dask.distributed.get_client()
     futures = [client.submit(eval_objective_list, ind,  objective_list, verbose, timeout=timeout,**objective_kwargs)  for ind in individual_list]
-    with TqdmCallback(desc="Evaluating Individuals", disable=verbose<2, leave=False):
-        dask.distributed.wait(futures)
+    
+    dask.distributed.progress(futures, notebook=False)
+    dask.distributed.wait(futures)
     
     offspring_scores = []
     # todo optimize this
