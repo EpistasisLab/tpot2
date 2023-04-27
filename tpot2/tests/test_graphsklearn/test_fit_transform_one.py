@@ -15,14 +15,13 @@ class TestFitTransformOne:
         res, _ = _fit_transform_one(model, X, y)
         assert res.tolist() == [[-1.0, 1.0], [1.0, -1.0]]
 
-    # Tests that the function can handle an empty subset_indexes argument. 
-    @pytest.mark.skip(reason="Discuss with team, should empty subset_indexes be handled?")
-    def test_fit_transform_one_with_empty_subset_indexes(self):
+    # Tests that the function can handle subset_indexes argument None.
+    def test_fit_transform_one_with_subset_indexes_none(self):
         # Edge case test
         X = [[0, 15], [1, -10]]
         y = [0, 1]
         model = StandardScaler()
-        res, _ = _fit_transform_one(model, X, y, subset_indexes=[])
+        res, _ = _fit_transform_one(model, X, y, subset_indexes=None)
         assert res.tolist() == [[-1.0, 1.0], [1.0, -1.0]]
 
     # Tests that the function can correctly fit and transform data using a model with neither fit_transform nor transform methods.  
