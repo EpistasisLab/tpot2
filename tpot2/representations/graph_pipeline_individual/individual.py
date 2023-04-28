@@ -188,12 +188,12 @@ class GraphIndividual(tpot2.BaseIndividual):
         #self.root =list(nx.topological_sort(self.graph))[0]
 
 
-        self.mutate_methods_list = [    self._mutate_get_new_hyperparameter,
-                                        self._mutate_replace_method, 
+        self.mutate_methods_list = [    self._mutate_hyperparameters,
+                                        self._mutate_replace_node, 
                                         self._mutate_insert_leaf,
                                         self._mutate_remove_node,
-                                        self._mutate_add_connection_from,
-                                        self._mutate_remove_extra_edge,
+                                        self._mutate_add_edge,
+                                        self._mutate_remove_edge,
                                         self._mutate_insert_inner_node,
                                         ]
 
@@ -202,9 +202,8 @@ class GraphIndividual(tpot2.BaseIndividual):
         self.crossover_methods_list = [
                                     #self._crossover_swap_node,
                                     #self._crossover_hyperparameters,
-                                    self._crossover_swap_branch_with_all_children,
-                                    self._crossover_combine_and_prune,
-                                    self._crossover_take_branch_with_all_children,
+                                    self._crossover_swap_branch,
+                                    self._crossover_take_branch,
                                     #self._crossover_swap_leaf_at_node,
                                             ]
 
@@ -885,7 +884,7 @@ class GraphIndividual(tpot2.BaseIndividual):
 
 
 
-    def _crossover_swap_branch_with_all_children(self, G2):
+    def _crossover_swap_branch(self, G2):
         '''
         Swaps a subgraph from Parent1 with a subgraph from Parent2.
         '''
@@ -982,7 +981,7 @@ class GraphIndividual(tpot2.BaseIndividual):
         return success
 
 
-    def _crossover_take_branch_with_all_children(self, G2):
+    def _crossover_take_branch(self, G2):
         '''
         Takes a subgraph from Parent2 and add it to a randomly chosen node in Parent1.
         '''
