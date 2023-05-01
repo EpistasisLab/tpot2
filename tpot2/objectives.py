@@ -110,12 +110,19 @@ def parallel_eval_objective_list(individual_list,
     
     offspring_scores = []
     # todo optimize this
-    for future in futures:
+    for individual, future in zip(individual_list, futures):
         if not future.done():
             future.cancel()
             offspring_scores.append(["TIMEOUT"])
+            if verbose >= 4:
+                print(f'WARNING AN INDIVIDUAL TIMED OUT: \n {individual} \n')
         elif future.exception():
             offspring_scores.append(["INVALID"])
+            if verbose == 4:
+                print(f'WARNING THIS INDIVIDUAL CAUSED AND EXCEPTION \n {individual} \n {future.exception()} \n')
+            if verbose >= 5:
+                trace = traceback.format_exc()
+                print(f'WARNING THIS INDIVIDUAL CAUSED AND EXCEPTION \n {individual} \n {future.exception()} \n {future.traceback()}')
         else:
             offspring_scores.append(future.result())
             
