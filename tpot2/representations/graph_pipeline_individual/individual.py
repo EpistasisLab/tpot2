@@ -105,9 +105,8 @@ class GraphIndividual(tpot2.BaseIndividual):
                 inner_config_dict=None, 
                 leaf_config_dict=None,
                 initial_graph = None,
-                max_depth = np.inf,
                 max_size = np.inf, 
-                max_children = np.inf,
+                linear_pipeline = False,
                 name=None,
                 crossover_same_depth = False,
                 crossover_same_recursive_depth = True,
@@ -120,10 +119,7 @@ class GraphIndividual(tpot2.BaseIndividual):
         self.__debug = False
 
         self.root_config_dict = root_config_dict
-        if inner_config_dict is None:
-            self.inner_config_dict = self.root_config_dict
-        else:
-            self.inner_config_dict = inner_config_dict
+        self.inner_config_dict = inner_config_dict
         self.leaf_config_dict = leaf_config_dict
 
 
@@ -189,24 +185,30 @@ class GraphIndividual(tpot2.BaseIndividual):
         #self.root =list(nx.topological_sort(self.graph))[0]
 
 
-        self.mutate_methods_list = [    self._mutate_hyperparameters,
+        self.mutate_methods_list =     [self._mutate_hyperparameters,
                                         self._mutate_replace_node, 
-                                        self._mutate_insert_leaf,
                                         self._mutate_remove_node,
-                                        self._mutate_insert_bypass_node,
-                                        self._mutate_insert_inner_node,
-
+                                        ]
+        
+        self.crossover_methods_list = [
+                                        #self._crossover_swap_node,
+                                        #self._crossover_hyperparameters,
+                                        self._crossover_swap_branch,
+                                        #self._crossover_take_branch,
+                                        #self._crossover_swap_leaf_at_node,
                                         ]
 
+        if self.inner_config_dict is not None:
+            self.mutate_methods_list.append(self._mutate_insert_inner_node)
+            self.crossover_methods_list.append(self._crossover_take_branch) #this is the only crossover method that can create inner nodes
+            if not linear_pipeline:
+                self.mutate_methods_list.append(self._mutate_insert_bypass_node)
+
+        if not linear_pipeline:
+            self.mutate_methods_list.append(self._mutate_insert_leaf)
 
 
-        self.crossover_methods_list = [
-                                    #self._crossover_swap_node,
-                                    #self._crossover_hyperparameters,
-                                    self._crossover_swap_branch,
-                                    self._crossover_take_branch,
-                                    #self._crossover_swap_leaf_at_node,
-                                            ]
+
 
         if self.unique_subset_values is not None:
             self.crossover_methods_list.append(self._crossover_row_subsets)
@@ -967,6 +969,7 @@ class GraphIndividual(tpot2.BaseIndividual):
             if node2 is G2.root: #dont want to add root as inner node
                 continue
             
+
             #check if node1 is a leaf and leafs are protected, don't add an input to the leave 
             if self.leaf_config_dict is not None and len(list(self.graph.successors(node1))) == 0:
                 continue
@@ -1071,6 +1074,8 @@ class GraphIndividual(tpot2.BaseIndividual):
         #TODO how to separate full model?
         pass
 
+    def __str__(self):
+        return self.export_pipeline().__str__()
 
     def unique_id(self) -> GraphKey:
         if self.key is None:
