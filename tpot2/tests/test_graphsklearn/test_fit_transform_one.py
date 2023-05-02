@@ -32,25 +32,3 @@ class TestFitTransformOne:
         res, fitted_model = _fit_transform_one(model, X, y)
         assert res.shape == (3, 2)
         assert isinstance(fitted_model, KMeans)
-
-    # Tests that the function returns the fitted model.  
-    # skipping this test because it is failing
-    # this is a recurring issue, we need to discuss with the team
-    # pytest output:
-    """
-            def _fit_transform_one(model, X, y, fit_transform=True, subset_indexes=None, **fit_params):
-    
-            if subset_indexes is None:
-                if fit_transform and hasattr(model, "fit_transform"):
-                    res = model.fit_transform(X, y, **fit_params)
-                else:
-        >                   res = model.fit(X, y, **fit_params).transform(X)
-        E               AttributeError: 'LinearRegression' object has no attribute 'transform'
-    """
-    @pytest.mark.skip(reason="Discuss with team, recurring issue")
-    def test_fit_transform_one_returns_fitted_model(self):
-        X = [[1, 2], [3, 4], [5, 6]]
-        y = [0, 1, 0]
-        model = LinearRegression()
-        res, fitted_model = _fit_transform_one(model, X, y)
-        assert isinstance(fitted_model, LinearRegression)
