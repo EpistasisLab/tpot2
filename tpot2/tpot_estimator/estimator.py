@@ -638,16 +638,29 @@ class TPOTEstimator(BaseEstimator):
 
         #.export_pipeline(memory=self.memory, cross_val_predict_cv=self.cross_val_predict_cv, subset_column=self.subset_column),
         #tmp = partial(objective_function_generator, scorers= self._scorers, cv=self.cv_gen, other_objective_functions=self.other_objective_functions )
-        self.final_object_function_list =[ lambda pipeline_individual, X, y,is_classification=self.classification,
-                scorers= self._scorers, cv=self.cv_gen, other_objective_functions=self.other_objective_functions,
-                 memory=self.memory, cross_val_predict_cv=self.cross_val_predict_cv, subset_column=self.subset_column, **kwargs: objective_function_generator(
-                                pipeline_individual,
-                                #ind,
-                                X, y, 
-                                is_classification=is_classification,
-                                scorers= scorers, cv=cv, other_objective_functions=other_objective_functions,
-                                memory=memory, cross_val_predict_cv=cross_val_predict_cv, subset_column=subset_column,
-                                **kwargs,
+        self.final_object_function_list =[ lambda pipeline_individual, 
+                                            X, 
+                                            y,
+                                            is_classification=self.classification,
+                                            scorers= self._scorers, 
+                                            cv=self.cv_gen, 
+                                            other_objective_functions=self.other_objective_functions,
+                                            memory=self.memory, 
+                                            cross_val_predict_cv=self.cross_val_predict_cv, 
+                                            subset_column=self.subset_column, 
+                                            **kwargs: 
+                                            objective_function_generator(
+                                                pipeline_individual,
+                                                X, 
+                                                y, 
+                                                is_classification=is_classification,
+                                                scorers= scorers, 
+                                                cv=cv, 
+                                                other_objective_functions=other_objective_functions,
+                                                memory=memory, 
+                                                cross_val_predict_cv=cross_val_predict_cv, 
+                                                subset_column=subset_column,
+                                                **kwargs,
                                 )]
 
 
@@ -704,24 +717,41 @@ class TPOTEstimator(BaseEstimator):
 
         if validation_strategy == 'reshuffled':
             best_pareto_front_idx = list(self.pareto_front.index)
-            best_pareto_front = self.pareto_front.loc[best_pareto_front_idx]['Instance']
+            best_pareto_front = list(self.pareto_front.loc[best_pareto_front_idx]['Individual'])
             
             #reshuffle rows
             X, y = sklearn.utils.shuffle(X, y, random_state=1)
             X_future = _client.scatter(X)
             y_future = _client.scatter(y)
 
-            val_objective_function_list = [lambda ind, X, y, is_classification=self.classification,scorers= self._scorers, cv=self.cv_gen, other_objective_functions=self.other_objective_functions, **kwargs: objective_function_generator(
+            val_objective_function_list = [lambda   ind, 
+                                                    X, 
+                                                    y, 
+                                                    is_classification=self.classification,
+                                                    scorers= self._scorers, 
+                                                    cv=self.cv_gen, 
+                                                    other_objective_functions=self.other_objective_functions, 
+                                                    memory=self.memory, 
+                                                    cross_val_predict_cv=self.cross_val_predict_cv, 
+                                                    subset_column=self.subset_column, 
+                                                    **kwargs: objective_function_generator(
                                                                                                 ind,
-                                                                                                X,y, 
+                                                                                                X,
+                                                                                                y, 
                                                                                                 is_classification=is_classification,
-                                                                                                scorers= scorers, cv=cv, other_objective_functions=other_objective_functions,
+                                                                                                scorers= scorers, 
+                                                                                                cv=cv, 
+                                                                                                other_objective_functions=other_objective_functions,
+                                                                                                memory=memory, 
+                                                                                                cross_val_predict_cv=cross_val_predict_cv, 
+                                                                                                subset_column=subset_column,
                                                                                                 **kwargs,
                                                                                                 )]
             
+            objective_kwargs = {"X": X_future, "y": y_future}
             val_scores = tpot2.objectives.parallel_eval_objective_list(
                 best_pareto_front,
-                val_objective_function_list, n_jobs=self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds,n_expected_columns=len(self.objective_names), client=_client, X= X_future, y= y_future)
+                val_objective_function_list, n_jobs=self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds,n_expected_columns=len(self.objective_names), client=_client, **objective_kwargs)
 
             val_objective_names = ['validation_'+name for name in self.objective_names]
             self.objective_names_for_selection = val_objective_names
@@ -735,20 +765,37 @@ class TPOTEstimator(BaseEstimator):
             X_val_future = _client.scatter(X_val)
             y_val_future = _client.scatter(y_val)
 
-
+            objective_kwargs = {"X": X_future, "y": y_future, "X_val" : X_val_future, "y_val":y_val_future }
+            
             best_pareto_front_idx = list(self.pareto_front.index)
-            best_pareto_front = self.pareto_front.loc[best_pareto_front_idx]['Instance']
-            val_objective_function_list = [lambda ind, X, y, X_val, y_val, scorers= self._scorers, other_objective_functions=self.other_objective_functions, **kwargs: val_objective_function_generator(
-                ind,
-                X,y,
-                X_val, y_val, 
-                scorers= scorers, other_objective_functions=other_objective_functions,
-                **kwargs,
-                )]
+            best_pareto_front = list(self.pareto_front.loc[best_pareto_front_idx]['Individual'])
+            val_objective_function_list = [lambda   ind, 
+                                                    X, 
+                                                    y, 
+                                                    X_val, 
+                                                    y_val, 
+                                                    scorers= self._scorers, 
+                                                    other_objective_functions=self.other_objective_functions, 
+                                                    memory=self.memory, 
+                                                    cross_val_predict_cv=self.cross_val_predict_cv, 
+                                                    subset_column=self.subset_column, 
+                                                    **kwargs: val_objective_function_generator(
+                                                        ind,
+                                                        X,
+                                                        y,
+                                                        X_val, 
+                                                        y_val, 
+                                                        scorers= scorers, 
+                                                        other_objective_functions=other_objective_functions,
+                                                        memory=memory, 
+                                                        cross_val_predict_cv=cross_val_predict_cv, 
+                                                        subset_column=subset_column,
+                                                        **kwargs,
+                                                        )]
             
             val_scores = tpot2.objectives.parallel_eval_objective_list(
                 best_pareto_front,
-                val_objective_function_list, n_jobs=self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds,n_expected_columns=len(self.objective_names),client=_client, X=X_future, y=y_future, X_val=X_val_future, y_val=y_val_future)
+                val_objective_function_list, n_jobs=self.n_jobs, verbose=self.verbose, timeout=self.max_eval_time_seconds,n_expected_columns=len(self.objective_names),client=_client, **objective_kwargs)
 
             val_objective_names = ['validation_'+name for name in self.objective_names]
             self.objective_names_for_selection = val_objective_names
@@ -964,18 +1011,17 @@ def objective_function_generator(pipeline, x,y, scorers, cv, other_objective_fun
         
     return np.concatenate([cv_obj_scores,other_scores])
 
-
-def val_objective_function_generator(pipeline, X_train, y_train, X_test, y_test, scorers, other_objective_functions, memory=None, cross_val_predict_cv=None, subset_column=None, ):
+def val_objective_function_generator(pipeline, X_train, y_train, X_test, y_test, scorers, other_objective_functions, memory, cross_val_predict_cv, subset_column):
     #subsample the data
     pipeline = pipeline.export_pipeline(memory=memory, cross_val_predict_cv=cross_val_predict_cv, subset_column=subset_column)
     fitted_pipeline = sklearn.base.clone(pipeline)
     fitted_pipeline.fit(X_train, y_train)
 
-    this_fold_scores = [sklearn.metrics.get_scorer(scorer)(fitted_pipeline, X_test, y_test) for scorer in scorers] 
-    
+    if len(scorers) > 0:
+        scores =[sklearn.metrics.get_scorer(scorer)(fitted_pipeline, X_test, y_test) for scorer in scorers] 
+
     other_scores = []
-    #TODO use same exported pipeline as for each objective
     if other_objective_functions is not None and len(other_objective_functions) >0:
         other_scores = [obj(sklearn.base.clone(pipeline)) for obj in other_objective_functions]
     
-    return np.concatenate([this_fold_scores,other_scores])
+    return np.concatenate([scores,other_scores])
