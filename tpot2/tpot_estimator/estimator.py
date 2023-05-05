@@ -385,6 +385,28 @@ class TPOTEstimator(BaseEstimator):
             If True, will use multiprocessing to parallelize the optimization process. If False, will use threading.
             True seems to perform better. However, False is required for interactive debugging.
             
+        Attributes
+        ----------
+
+        fitted_pipeline_ : GraphPipeline
+            A fitted instance of the GraphPipeline that inherits from sklearn BaseEstimator. This is fitted on the full X, y passed to fit.
+
+        evaluated_individuals : A pandas data frame containing data for all evaluated individuals in the run. 
+            Columns: 
+            - *objective functions : The first few columns correspond to the passed in scorers and objective functions
+            - Parents : A tuple containing the indexes of the pipelines used to generate the pipeline of that row. If NaN, this pipeline was generated randomly in the initial population.
+            - Variation_Function : Which variation function was used to mutate or crossover the parents. If NaN, this pipeline was generated randomly in the initial population.
+            - Individual : The internal representation of the individual that is used during the evolutionary algorithm. This is not an sklearn BaseEstimator.
+            - Generation : The generation the pipeline first appeared. 
+            - Pareto_Front	: The nondominated front that this pipeline belongs to. 0 means that its scores is not strictly dominated by any other individual. 
+                            To save on computational time, the best frontier is updated iteratively each generation. 
+                            The pipelines with the 0th pareto front do represent the exact best frontier. However, the pipelines with pareto front >= 1 are only in reference to the other pipelines in the final population.
+                            All other pipelines are set to NaN. 
+            - Instance	: The unfitted GraphPipeline BaseEstimator. 
+            - *validation objective functions : Objective function scores evaluated on the validation set.
+            - Validation_Pareto_Front : The full pareto front calculated on the validation set. This is calculated for all pipelines with Pareto_Front equal to 0. Unlike the Pareto_Front which only calculates the frontier and the final population, the Validation Pareto Front is calculated for all pipelines tested on the validation set.
+            
+        pareto_front : The same pandas dataframe as evaluated individuals, but containing only the frontier pareto front pipelines.
         '''
 
         # sklearn BaseEstimator must have a corresponding attribute for each parameter.
@@ -757,6 +779,8 @@ class TPOTEstimator(BaseEstimator):
             self.objective_names_for_selection = val_objective_names
             self.evaluated_individuals.loc[best_pareto_front_idx,val_objective_names] = val_scores
 
+            self.evaluated_individuals["Validation_Pareto_Front"] = tpot2.get_pareto_front(self.evaluated_individuals, val_objective_names, self.objective_function_weights, invalid_values=["TIMEOUT","INVALID"])
+
         elif validation_strategy == 'split':
 
             
@@ -800,6 +824,7 @@ class TPOTEstimator(BaseEstimator):
             val_objective_names = ['validation_'+name for name in self.objective_names]
             self.objective_names_for_selection = val_objective_names
             self.evaluated_individuals.loc[best_pareto_front_idx,val_objective_names] = val_scores
+            self.evaluated_individuals["Validation_Pareto_Front"] = tpot2.get_pareto_front(self.evaluated_individuals, val_objective_names, self.objective_function_weights, invalid_values=["TIMEOUT","INVALID"])
         else:
             self.objective_names_for_selection = self.objective_names
 
