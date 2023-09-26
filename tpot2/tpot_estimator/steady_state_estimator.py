@@ -685,7 +685,7 @@ class TPOTEstimatorSteadyState(BaseEstimator):
                 memory=memory,
                 cross_val_predict_cv=cross_val_predict_cv,
                 subset_column=subset_column,
-                seed=seed
+                seed=seed,
                 **kwargs,
             )
 
@@ -808,7 +808,7 @@ class TPOTEstimatorSteadyState(BaseEstimator):
                                                                                                 memory=memory,
                                                                                                 cross_val_predict_cv=cross_val_predict_cv,
                                                                                                 subset_column=subset_column,
-                                                                                                seed=seed
+                                                                                                seed=seed,
                                                                                                 **kwargs,
                                                                                                 )]
 
