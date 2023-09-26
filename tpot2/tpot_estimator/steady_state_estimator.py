@@ -672,6 +672,7 @@ class TPOTEstimatorSteadyState(BaseEstimator):
                                             memory=self.memory,
                                             cross_val_predict_cv=self.cross_val_predict_cv,
                                             subset_column=self.subset_column,
+                                            seed=self.seed,
                                             **kwargs):
             return objective_function_generator(
                 pipeline_individual,
@@ -684,6 +685,7 @@ class TPOTEstimatorSteadyState(BaseEstimator):
                 memory=memory,
                 cross_val_predict_cv=cross_val_predict_cv,
                 subset_column=subset_column,
+                seed=seed
                 **kwargs,
             )
 
@@ -794,6 +796,7 @@ class TPOTEstimatorSteadyState(BaseEstimator):
                                                     memory=self.memory,
                                                     cross_val_predict_cv=self.cross_val_predict_cv,
                                                     subset_column=self.subset_column,
+                                                    seed=self.seed,
                                                     **kwargs: objective_function_generator(
                                                                                                 ind,
                                                                                                 X,
@@ -805,6 +808,7 @@ class TPOTEstimatorSteadyState(BaseEstimator):
                                                                                                 memory=memory,
                                                                                                 cross_val_predict_cv=cross_val_predict_cv,
                                                                                                 subset_column=subset_column,
+                                                                                                seed=seed
                                                                                                 **kwargs,
                                                                                                 )]
 
