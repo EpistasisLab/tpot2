@@ -29,13 +29,14 @@ def estimator_graph_individual_generator(
             for k in root_config_dict.keys():
 
                 graph = nx.DiGraph()
-                root = create_node(config_dict={k:root_config_dict[k]})
+                root = create_node(config_dict={k:root_config_dict[k]},rng=rng)
                 graph.add_node(root)
 
                 ind = GraphIndividual(    inner_config_dict=inner_config_dict,
                                                     leaf_config_dict=leaf_config_dict,
                                                     root_config_dict=root_config_dict,
                                                     initial_graph = graph,
+                                                    rng=rng,
 
                                                     max_size = max_size,
                                                     linear_pipeline = linear_pipeline,
@@ -55,7 +56,7 @@ def estimator_graph_individual_generator(
                             func = rng.choice(starting_ops)
                             func()
 
-
+                print(ind)
                 yield ind
 
 
