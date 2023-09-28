@@ -104,8 +104,10 @@ class TPOTEstimator(BaseEstimator):
                         verbose = 0,
                         scatter = True,
 
-                        # random seed
-                        seed = None
+                        # random seed for rng and cv split
+                        rng_seed = None,
+                        cv_seed = None
+
 
                         ):
 
@@ -393,16 +395,24 @@ class TPOTEstimator(BaseEstimator):
             >=5. full warnings trace
             6. evaluations progress bar. (Temporary: This used to be 2. Currently, using evaluation progress bar may prevent some instances were we terminate a generation early due to it reaching max_time_seconds in the middle of a generation OR a pipeline failed to be terminated normally and we need to manually terminate it.)
 
-        seed : int, None, default=None
-            A random seed for reproducability of experiments. This value will be passed to numpy.random.default_rng() to crate an instnce of the genrator to pass to other classes
+        rng_seed : int, None, default=None
+            A seed for reproducability of experiments. This value will be passed to numpy.random.default_rng() to crate an instnce of the genrator to pass to other classes
 
              -int
-                Will create the same data partitions and cv splits, regardless of multiple calls.
-                Will be used to create Generator for 'numpy.random.default_rng()'
+                Will be used to create and lock in Generator instance with 'numpy.random.default_rng()'
+
+            -None
+                Will be used to create Generator for 'numpy.random.default_rng()' where a fresh, unpredictable entropy will be pulled from the OS
+
+        skl_seed: int, None, default=None
+            A seed for reproducability of experiments for the scikit learn side of things.
+            This value will be passed to cv split, data partitions, and ml models to lock in their random_state param
+
+            -int
+                Will create the consistent data partitions and cv splits based of cv_seed given.
 
             -None
                 Will create the different data partitions and cv splits based of the global random state instance from numpy.random.
-                Will be used to create Generator for 'numpy.random.default_rng()' where a fresh, unpredictable entropy will be pulled from the OS
 
 
         Attributes
@@ -488,7 +498,19 @@ class TPOTEstimator(BaseEstimator):
         self.periodic_checkpoint_folder = periodic_checkpoint_folder
         self.callback = callback
         self.processes = processes
-        self.seed = seed
+
+        # create random number generator based on rng_seed
+        self.rng = np.random.default_rng(rng_seed)
+        
+        # set the numpy seed so anything using it will be consistent as well
+        # not sure if this is 100% true tho
+        np.random.seed(rng_seed)
+
+        # lock in a random seed if cv_seed is None
+        if cv_seed is None:
+            self.cv_seed = self.rng.integers(1000000)
+        else:
+            self.cv_seed = cv_seed
 
 
         self.scatter = scatter
@@ -591,9 +613,9 @@ class TPOTEstimator(BaseEstimator):
 
         if validation_strategy == 'split':
             if self.classification:
-                X, X_val, y, y_val = train_test_split(X, y, test_size=self.validation_fraction, stratify=y, random_state=self.seed)
+                X, X_val, y, y_val = train_test_split(X, y, test_size=self.validation_fraction, stratify=y, random_state=self.cv_seed)
             else:
-                X, X_val, y, y_val = train_test_split(X, y, test_size=self.validation_fraction, random_state=self.seed)
+                X, X_val, y, y_val = train_test_split(X, y, test_size=self.validation_fraction, random_state=self.cv_seed)
 
 
         X_original = X
@@ -661,9 +683,9 @@ class TPOTEstimator(BaseEstimator):
         #check if self.cv is a number
         if isinstance(self.cv, int) or isinstance(self.cv, float):
             if self.classification:
-                self.cv_gen = sklearn.model_selection.StratifiedKFold(n_splits=self.cv, shuffle=True, random_state=self.seed)
+                self.cv_gen = sklearn.model_selection.StratifiedKFold(n_splits=self.cv, shuffle=True, random_state=self.cv_seed)
             else:
-                self.cv_gen = sklearn.model_selection.KFold(n_splits=self.cv, shuffle=True, random_state=self.seed)
+                self.cv_gen = sklearn.model_selection.KFold(n_splits=self.cv, shuffle=True, random_state=self.cv_seed)
 
         else:
             self.cv_gen = sklearn.model_selection.check_cv(self.cv, y, classifier=self.classification)
@@ -678,7 +700,7 @@ class TPOTEstimator(BaseEstimator):
                                             memory=self.memory,
                                             cross_val_predict_cv=self.cross_val_predict_cv,
                                             subset_column=self.subset_column,
-                                            seed=self.seed,
+                                            seed=self.cv_seed,
                                             **kwargs):
             return objective_function_generator(
                 pipeline_individual,
@@ -788,7 +810,7 @@ class TPOTEstimator(BaseEstimator):
             best_pareto_front = list(self.pareto_front.loc[best_pareto_front_idx]['Individual'])
 
             #reshuffle rows
-            X, y = sklearn.utils.shuffle(X, y, random_state=self.seed)
+            X, y = sklearn.utils.shuffle(X, y, random_state=self.cv_seed)
 
             if self.scatter:
                 X_future = _client.scatter(X)
@@ -807,7 +829,7 @@ class TPOTEstimator(BaseEstimator):
                                                     memory=self.memory,
                                                     cross_val_predict_cv=self.cross_val_predict_cv,
                                                     subset_column=self.subset_column,
-                                                    seed=self.seed,
+                                                    seed=self.cv_seed,
                                                     **kwargs: objective_function_generator(
                                                                                                 ind,
                                                                                                 X,
