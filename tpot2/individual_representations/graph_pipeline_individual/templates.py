@@ -10,11 +10,12 @@ from tpot2.individual_representations.graph_pipeline_individual.individual impor
 
 def estimator_graph_individual_generator(
                                                 root_config_dict,
+                                                rng_generator, # random number generator passed by estimator class
+                                                rng_seed_, # seed to pass to nodes to set random_state in models (if applicable)
                                                 inner_config_dict=None,
                                                 leaf_config_dict=None,
                                                 max_size = np.inf,
                                                 linear_pipeline = False,
-                                                rng_generator=None, # random number generator passed by estimator class
                                                 **kwargs,
                                             ) :
 
@@ -29,14 +30,15 @@ def estimator_graph_individual_generator(
             for k in root_config_dict.keys():
 
                 graph = nx.DiGraph()
-                root = create_node(config_dict={k:root_config_dict[k]},rng=rng)
+                root = create_node(config_dict={k:root_config_dict[k]},rng_=rng,rng_seed_=rng_seed_)
                 graph.add_node(root)
 
                 ind = GraphIndividual(    inner_config_dict=inner_config_dict,
                                                     leaf_config_dict=leaf_config_dict,
                                                     root_config_dict=root_config_dict,
                                                     initial_graph = graph,
-                                                    rng=rng,
+                                                    rng_=rng,
+                                                    rng_seed_=rng_seed_,
 
                                                     max_size = max_size,
                                                     linear_pipeline = linear_pipeline,
@@ -54,7 +56,7 @@ def estimator_graph_individual_generator(
                     if n_nodes > 0:
                         for _ in range(rng.integers(0,min(n_nodes,3))):
                             func = rng.choice(starting_ops)
-                            func()
+                            func(rng_=rng)
 
                 print(ind)
                 yield ind
