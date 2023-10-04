@@ -501,6 +501,7 @@ class TPOTEstimator(BaseEstimator):
 
         # create random number generator based on rng_seed
         self.rng = np.random.default_rng(rng_seed)
+        self.rng_seed = rng_seed
 
         # set the numpy seed so anything using it will be consistent as well
         # not sure if this is 100% true tho
@@ -723,7 +724,8 @@ class TPOTEstimator(BaseEstimator):
                                                             leaf_config_dict=leaf_config_dict,
                                                             max_size = self.max_size,
                                                             linear_pipeline=self.linear_pipeline,
-                                                            rng_generator=self.rng
+                                                            rng_generator=self.rng,
+                                                            rng_seed_=self.rng_seed
                                                                 )
 
         if self.threshold_evaluation_early_stop is not None or self.selection_evaluation_early_stop is not None:
@@ -782,6 +784,7 @@ class TPOTEstimator(BaseEstimator):
                                             mutate_then_crossover_probability= self.mutate_then_crossover_probability,
                                             crossover_then_mutate_probability= self.crossover_then_mutate_probability,
 
+                                            rng_=self.rng,
                                             )
 
 
