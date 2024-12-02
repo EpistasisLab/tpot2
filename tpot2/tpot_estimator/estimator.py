@@ -135,6 +135,8 @@ class TPOTEstimator(BaseEstimator):
                          # random seed for random number generator (rng)
                         random_state = None,
 
+                        customized_initial_population=[]
+
                         ):
 
         '''
@@ -508,6 +510,7 @@ class TPOTEstimator(BaseEstimator):
 
         self.label_encoder_ = None
 
+        self.customized_initial_population = customized_initial_population
 
         set_dask_settings()
 
@@ -757,6 +760,8 @@ class TPOTEstimator(BaseEstimator):
                                             crossover_then_mutate_probability= self.crossover_then_mutate_probability,
 
                                             rng=self.rng,
+
+                                            customized_initial_population=self.customized_initial_population,
                                             )
 
 
