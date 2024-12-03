@@ -13,17 +13,17 @@ def test_customized_iniPop():
 
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, train_size=0.75, test_size=0.25)
 
-    from tpot2.config.get_configspace import set_node
+    from tpot2.search_spaces.nodes.estimator_node import EstimatorNodeIndividual
     from tpot2.search_spaces.pipelines.union import UnionPipeline
     from tpot2.search_spaces.pipelines.choice import ChoicePipeline
     from tpot2.search_spaces.pipelines.sequential import SequentialPipeline
     from tpot2.config.get_configspace import get_search_space
 
-    scalers = set_node("MinMaxScaler", {})
-    selectors = set_node("SelectFwe", {'alpha': 0.0002381268562})
+    scalers = EstimatorNodeIndividual("MinMaxScaler", {})
+    selectors = EstimatorNodeIndividual("SelectFwe", {'alpha': 0.0002381268562})
     transformers_layer =UnionPipeline([
                             ChoicePipeline([
-                                set_node("SkipTransformer", {})
+                                EstimatorNodeIndividual("SkipTransformer", {})
                             ]),
                             get_search_space("Passthrough",)
                             ]
@@ -32,7 +32,7 @@ def test_customized_iniPop():
     inner_estimators_layer = UnionPipeline([
                                 get_search_space("Passthrough",)]
                             )
-    estimators = set_node("HistGradientBoostingClassifier", 
+    estimators = EstimatorNodeIndividual("HistGradientBoostingClassifier", 
                         {'early_stop': 'valid', 
                         'l2_regularization': 0.0011074158219, 
                         'learning_rate': 0.0050792320068, 
