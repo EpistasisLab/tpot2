@@ -82,7 +82,7 @@ def test_customized_iniPop():
 
 ## Any background context you want to provide?
 
-Under this version, users can specify well-defined initial pipeline population in SequentialPipeline type pipeline. This update has the potential to enhance the algorithm's performance and reduce evolutionary time.
+In this version, users can specify a well-defined initial pipeline population, currently limited to the *SequentialPipeline* type. This update has the potential to improve algorithm performance and reduce evolutionary time.
 
 Several Tips:
 
@@ -90,7 +90,7 @@ Several Tips:
 
 Referencing the examples in customized_initial_population.py and modifying them according to TPOT2's config_dict.
 
-2. We consider the relationship between #customized initial pipelines and #population as follows:
+2. We consider the relationship between #customized initial pipelines and #population_size as follows:
 
 ```
 init_population_size = len(customized_initial_population)
