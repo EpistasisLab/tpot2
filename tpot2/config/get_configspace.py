@@ -546,6 +546,18 @@ def get_search_space(name, n_classes=3, n_samples=1000, n_features=100, random_s
     
     return get_node(name, n_classes=n_classes, n_samples=n_samples, n_features=n_features, random_state=random_state, base_node=base_node, n_jobs=n_jobs)
 
+def set_node(name, params):
+    node = get_node(name)
+    if isinstance(node.space, dict):
+        node.space = params
+    else:
+        rng = np.random.default_rng(rng)
+        node.space.seed(rng.integers(0, 2**32))
+        node.hyperparameters = dict(node.space.sample_configuration())
+        for key, val in params.items():
+            node.hyperparameters[key] = val
+        node.space = node.hyperparameters
+    return node
 
 def get_node(name, n_classes=3, n_samples=100, n_features=100, random_state=None, base_node=EstimatorNode, n_jobs=1):
     """
