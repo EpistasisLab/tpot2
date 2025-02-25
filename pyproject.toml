@@ -1,6 +1,66 @@
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+[project]
+name = "tpot"
+description = "Tree-based Pipilene Optimization Tool"
+license = "GNU/LGPLv3"  # TODO: update this
+version="1.0.0"  # TODO: update this
+# TODO: this doesn't seem to match code comments
+authors = [{ name = "Pedro Ribioro", email = "pedroribeiroh@gmail.com" }]
+readme = "README.md"
+homepage = "https://epistasislab.github.io/tpot/"
+repository="https://github.com/EpistasisLab/tpot2"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+keywords = [
+    "pipeline optimization",
+    "hyperparameter optimization",
+    "data science",
+    "machine learning",
+    "genetic programming",
+    "evolutionary computation"
+]
+requires-python=">=3.10.0,<3.13.0"
+
+dependencies = [
+    "ConfigSpace",
+    "dask",
+    "joblib",
+    "lightgbm",
+    "matplotlib",
+    "networkx",
+    "numpy",
+    "nose",
+    "numpy",
+    "pandas",
+    "pytorch",
+    "scikit-learn",
+    "scipy",
+    "stopit",
+    "tqdm",
+    "traitlets",
+    "xgboost-cpu",
+    "xgboost",
+]
+
+[project.optional-dependencies]
+cpu = ["xgboost-cpu"]
+gpu = ["xgboost"]
+nn = ["pytorch"]
+plot = ["matplotlib"]
+
+[tool.poetry.group.dev]
+optional = true
+[tool.poetry.group.dev.dependencies]
+nose = "*"
+pytest = "*"
+pytest-cov = "*"
+mypy = "*"
+flake8 = "*"
+tox = "*"
+
 
 [tool.pytest.ini_options]
 addopts = "--cov=tpot"
